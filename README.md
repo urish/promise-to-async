@@ -1,17 +1,17 @@
-# async-to-promise
+# promise-to-async
 
-[![Build Status](https://travis-ci.org/urish/async-to-promise.png?branch=master)](https://travis-ci.org/urish/async-to-promise)
-[![Coverage Status](https://coveralls.io/repos/github/urish/async-to-promise/badge.svg?branch=master)](https://coveralls.io/github/urish/async-to-promise?branch=master)
+[![Build Status](https://travis-ci.org/urish/promise-to-async.png?branch=master)](https://travis-ci.org/urish/promise-to-async)
+[![Coverage Status](https://coveralls.io/repos/github/urish/promise-to-async/badge.svg?branch=master)](https://coveralls.io/github/urish/promise-to-async?branch=master)
 
 Automatically transform promise code to the ES2017 async / await syntax
 
 ## Install
 
-    yarn global add async-to-promise
+    yarn global add promise-to-async
 
 or
 
-    npm install --global async-to-promise
+    npm install --global promise-to-async
 
 ## Example
 
