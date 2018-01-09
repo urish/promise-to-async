@@ -1,9 +1,6 @@
 import * as ts from 'typescript';
 
-class Replacement {
-    constructor(readonly start: number, readonly end: number, readonly text = '') {
-    }
-}
+import { applyReplacements, Replacement } from './replacement';
 
 function isAsync(node: ts.Node) {
     if (!node.modifiers) {
@@ -19,21 +16,40 @@ function asyncInsertionPos(node: ts.FunctionLikeDeclarationBase) {
     return node.getStart();
 }
 
-function visit(node: ts.Node, replacements: Replacement[]) {
-    if ((ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isArrowFunction(node)) &&
-        !isAsync(node)) {
-        const insertionPos = asyncInsertionPos(node);
-        replacements.push(new Replacement(insertionPos, insertionPos, 'async '));
+function rewriteFunctionBody(body: ts.ConciseBody, replacements: Replacement[]) {
+    let found = false;
+    function visitChild(node: ts.Node) {
+        if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
+            && ts.isIdentifier(node.expression.name)
+            && ['then'].indexOf(node.expression.name.text) >= 0) {
+            if (node.arguments.length === 1) {
+                const arg = node.arguments[0];
+                if (ts.isFunctionLike(arg)) {
+                    // TODO
+                } else {
+                    replacements.push(Replacement.insert(node.getStart(), arg.getText() + '(await '));
+                    replacements.push(Replacement.delete(node.expression.expression.getEnd(), node.getEnd()));
+                    replacements.push(Replacement.insert(node.getEnd(), ')'));
+                    found = true;
+                }
+            }
+        }
+        node.forEachChild(visitChild);
     }
-    node.forEachChild((child) => visit(child, replacements));
+    visitChild(body);
+    return found;
 }
 
-function applyReplacements(source: string, replacements: Replacement[]) {
-    replacements = replacements.sort((r1, r2) => r2.end - r1.end);
-    for (const replacement of replacements) {
-        source = source.slice(0, replacement.start) + replacement.text + source.slice(replacement.end);
+function visit(node: ts.Node, replacements: Replacement[]) {
+    if ((ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isArrowFunction(node))
+        && node.body) {
+        const rewritten = rewriteFunctionBody(node.body, replacements);
+        if (rewritten && !isAsync(node)) {
+            const insertionPos = asyncInsertionPos(node);
+            replacements.push(Replacement.insert(insertionPos, 'async '));
+        }
     }
-    return source;
+    node.forEachChild((child) => visit(child, replacements));
 }
 
 export function transform(source: string) {
