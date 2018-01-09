@@ -24,8 +24,13 @@ function rewriteFunctionBody(body: ts.ConciseBody, replacements: Replacement[]) 
             && ['then'].indexOf(node.expression.name.text) >= 0) {
             if (node.arguments.length === 1) {
                 const arg = node.arguments[0];
-                if (ts.isFunctionLike(arg)) {
-                    // TODO
+                if ((ts.isArrowFunction(arg) || ts.isFunctionDeclaration(arg) || ts.isFunctionDeclaration(arg))
+                    && arg.body) {
+                    const prefix = `const ${arg.parameters[0].getText()} = await `;
+                    replacements.push(Replacement.insert(node.getStart(), prefix));
+                    replacements.push(Replacement.delete(node.expression.expression.getEnd(), node.getEnd()));
+                    replacements.push(Replacement.insert(node.getEnd(), ';\n' + arg.body.getText()));
+                    found = true;
                 } else {
                     replacements.push(Replacement.insert(node.getStart(), arg.getText() + '(await '));
                     replacements.push(Replacement.delete(node.expression.expression.getEnd(), node.getEnd()));

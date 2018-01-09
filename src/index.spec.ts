@@ -1,6 +1,26 @@
+import * as prettier from 'prettier';
+
 import { transform } from './index';
 
 describe('async-to-promise', () => {
+    describe('transforming then with function callback', () => {
+        it('should transform standard functions', () => {
+            const input = `
+                function doIt() {
+                    promise.then(result => console.log(result));
+                }
+            `;
+            const output = `
+                async function doIt() {
+                    const result = await promise;
+                    console.log(result);
+                }
+            `;
+            expect(prettier.format(transform(input)))
+                .toEqual(prettier.format(output));
+        });
+    });
+
     describe('transforming then() with function name', () => {
         it('should transform standard functions', () => {
             expect(transform('/* awesome */ function foo() { Promise.resolve(1).then(console.log);}').trim())
