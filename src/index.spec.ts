@@ -12,6 +12,11 @@ describe('async-to-promise', () => {
                 .toBe('const foo = async () => 0');
         });
 
+        it('should properly apply multiple insertions', () => {
+            expect(transform('const foo = () => 0, bar = () => 1').trim())
+                .toBe('const foo = async () => 0, bar = async () => 1');
+        });
+
         it('should insert the `async` keyword before private class methods', () => {
             const input = `
                 class Test {
